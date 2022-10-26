@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -38,11 +40,6 @@ public class ParseConfig {
         try {
             BufferedReader bufferReader = new BufferedReader(new FileReader(file));
             String line;
-            HashMap<String,?> rutine = new HashMap();
-            Set<String> rutineDeep = new HashSet();
-            boolean createRutine = false;
-            boolean createFields = false;
-            int nestedLevel = 0;
             
             try {
                 
@@ -50,56 +47,17 @@ public class ParseConfig {
                 while((line = bufferReader.readLine()) != null){
                     line = line.trim();
                     System.out.println(line);
-                    if(line.contains("{")){
-                        createRutine = true;
-                        nestedLevel++;
-                    }
+                    /*Match wathever alphanumeric value and add quotes*/
+                    Pattern regex = Pattern.compile("(\\w+)");
+                    Pattern colonInBraket = Pattern.compile("(\"\\w+\")(?=(\\s*)(\\{))");
+                    Matcher matcher = regex.matcher(line);
+                    String lineModified = matcher.replaceAll(match->"\"" + match.group() + "\"");
+                    matcher = colonInBraket.matcher(lineModified);
+                    lineModified = matcher.replaceAll(match -> match.group(0)+ ":");
                     
-                    if(line.contains("}")){
-                        nestedLevel--;
-                        if(nestedLevel < 0){
-                            // if we reach -1 it means there is an error
-                            // on the keys they are unbalansed
-                            throw new Exception("Unbalanced brackets");
-                        }
-                    }
                     
-                    if(!line.contains("{")) createFields = true;
                     
-                    if(createRutine) {
-                        // Create rutine
-                        String rutineName = line.substring(0, line.indexOf("{"));
-                        rutineDeep.add(rutineName);
-                        createRutine = false;
-                    }
-                    
-                    if(createFields) {
-                        // split by spaces and check if the length is more
-                        // than 2 so we have a key value pair
-                        // otherwise we have a flag
-                        createFields = false;
-
-                        String[] fields = line.split("\\s+");
-                        if(fields.length > 1){
-                            HashMap<String, List<String>> keys = new HashMap<>();
-                            List<String> options = new ArrayList<>();
-                            String key = fields[0];
-                            
-                            for(int i = 1; i<fields.length; i++){
-                                options.add(fields[i]);
-                            }
-                            
-                            keys.put(fields[0], options);
-                            
-                            System.out.println("Values in keys");
-                            System.out.println(keys.toString());
-                            
-                        }else {
-                            // flag
-                        }
-                    }
-                    
-                   
+                    System.out.println(lineModified);
                     
                 }
                 
