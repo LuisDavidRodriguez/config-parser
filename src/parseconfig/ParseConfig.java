@@ -116,10 +116,3 @@ public class ParseConfig {
     }
     
 }
-
-
-class Section {
-    public Section (){
-        
-    }
-}
