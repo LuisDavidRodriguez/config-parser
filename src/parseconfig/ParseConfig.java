@@ -11,14 +11,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -34,78 +31,75 @@ public class ParseConfig {
         // TODO code application logic here
         System.out.println(path.toAbsolutePath());
         File file = new File(path.toAbsolutePath().toString());
+        String jsonRepresentation = "{";
         
         try {
             BufferedReader bufferReader = new BufferedReader(new FileReader(file));
             String line;
-            HashMap<String,?> rutine = new HashMap();
-            Set<String> rutineDeep = new HashSet();
-            boolean createRutine = false;
-            boolean createFields = false;
-            int nestedLevel = 0;
             
             try {
                 
 
                 while((line = bufferReader.readLine()) != null){
                     line = line.trim();
+                    if(line.isEmpty()) continue;
                     System.out.println(line);
-                    if(line.contains("{")){
-                        createRutine = true;
-                        nestedLevel++;
-                    }
+                    String lineModified;
+                    /*Match wathever alphanumeric value and add quotes*/
+                    Pattern regex = Pattern.compile("(\\w+)");
+                    /*Match the world that infront have the culy bracket*/
+                    Pattern colonInBraket = Pattern.compile("(\"\\w+\")(?=(\\s*)(\\{))");
+                    /*Match the field*/
+                    Pattern colonField = Pattern.compile("^(\"\\w+\")(?!.+\\{|\\b)");
+                    /*Match if it is only a flag*/
+                    Pattern isFlag = Pattern.compile("^(\"\\w+\":)$");
                     
-                    if(line.contains("}")){
-                        nestedLevel--;
-                        if(nestedLevel < 0){
-                            // if we reach -1 it means there is an error
-                            // on the keys they are unbalansed
-                            throw new Exception("Unbalanced brackets");
+                    Matcher matcher = regex.matcher(line);
+                    lineModified = matcher.replaceAll(match->"\"" + match.group() + "\"");
+                    
+                    matcher = colonInBraket.matcher(lineModified);
+                    lineModified = matcher.replaceAll(match -> match.group(0)+ ":");
+                    
+                    matcher = colonField.matcher(lineModified);
+                    lineModified = matcher.replaceAll(match -> match.group()+ ":");
+                    
+                    matcher = isFlag.matcher(lineModified);
+                    lineModified = matcher.replaceAll(match -> match.group() + true);
+                    
+                    // in case a space separated list items like port we want to
+                    // create an string repesentation of a Json array
+                    if(!lineModified.contains("{")){
+                        String[] values = lineModified.split("\\s+");
+                        
+                        if(values.length > 2){
+                            String[] ports = Arrays.copyOfRange(values, 1, values.length);
+                            lineModified = values[0] + Arrays.toString(ports);
                         }
+                        
                     }
                     
-                    if(!line.contains("{")) createFields = true;
                     
-                    if(createRutine) {
-                        // Create rutine
-                        String rutineName = line.substring(0, line.indexOf("{"));
-                        rutineDeep.add(rutineName);
-                        createRutine = false;
-                    }
-                    
-                    if(createFields) {
-                        // split by spaces and check if the length is more
-                        // than 2 so we have a key value pair
-                        // otherwise we have a flag
-                        createFields = false;
-
-                        String[] fields = line.split("\\s+");
-                        if(fields.length > 1){
-                            HashMap<String, List<String>> keys = new HashMap<>();
-                            List<String> options = new ArrayList<>();
-                            String key = fields[0];
-                            
-                            for(int i = 1; i<fields.length; i++){
-                                options.add(fields[i]);
-                            }
-                            
-                            keys.put(fields[0], options);
-                            
-                            System.out.println("Values in keys");
-                            System.out.println(keys.toString());
-                            
-                        }else {
-                            // flag
-                        }
-                    }
-                    
-                   
-                    
+                    jsonRepresentation += lineModified + ",";
                 }
                 
+                jsonRepresentation += "}";
+                
+                // Mm I hadn't add the line to prevent the empty lines to pass
+                // throug the prosses that is why it was adding extra comas
+                // I will keep this lines then after some tests I can prune the
+                // code
+                // ok at the end just remove the {,
+                // ,}
+                // , at the end
+                Pattern removeComas = Pattern.compile("(?<=\\{),|,(?=\\})|,+$");
+                jsonRepresentation = jsonRepresentation.replaceAll(removeComas.toString(), "");
+                // remove ,, comas
+                jsonRepresentation = jsonRepresentation.replaceAll(",,+", ",");
+                System.out.println(jsonRepresentation);
+                
+
+                
             } catch (IOException ex) {
-                Logger.getLogger(ParseConfig.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (Exception ex) {
                 Logger.getLogger(ParseConfig.class.getName()).log(Level.SEVERE, null, ex);
             }
            
@@ -115,11 +109,4 @@ public class ParseConfig {
         }
     }
     
-}
-
-
-class Section {
-    public Section (){
-        
-    }
 }
