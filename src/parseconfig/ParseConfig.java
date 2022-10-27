@@ -84,12 +84,15 @@ public class ParseConfig {
                 
                 jsonRepresentation += "}";
                 
+                // Mm I hadn't add the line to prevent the empty lines to pass
+                // throug the prosses that is why it was adding extra comas
+                // I will keep this lines then after some tests I can prune the
+                // code
                 // ok at the end just remove the {,
                 // ,}
                 // , at the end
                 Pattern removeComas = Pattern.compile("(?<=\\{),|,(?=\\})|,+$");
                 jsonRepresentation = jsonRepresentation.replaceAll(removeComas.toString(), "");
-                System.out.println(jsonRepresentation);
                 // remove ,, comas
                 jsonRepresentation = jsonRepresentation.replaceAll(",,+", ",");
                 System.out.println(jsonRepresentation);
