@@ -16,7 +16,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import object
 
 /**
  *
@@ -43,7 +42,9 @@ public class ParseConfig {
 
                 while((line = bufferReader.readLine()) != null){
                     line = line.trim();
+                    if(line.isEmpty()) continue;
                     System.out.println(line);
+                    String lineModified;
                     /*Match wathever alphanumeric value and add quotes*/
                     Pattern regex = Pattern.compile("(\\w+)");
                     /*Match the world that infront have the culy bracket*/
@@ -52,11 +53,9 @@ public class ParseConfig {
                     Pattern colonField = Pattern.compile("^(\"\\w+\")(?!.+\\{|\\b)");
                     /*Match if it is only a flag*/
                     Pattern isFlag = Pattern.compile("^(\"\\w+\":)$");
-                    /*Match if we have an space separated list of ports or fields*/
-                    Pattern separatedList = Pattern.compile("(?<=[\"\\w+\":])\\s+(\"\\w+\")");
                     
                     Matcher matcher = regex.matcher(line);
-                    String lineModified = matcher.replaceAll(match->"\"" + match.group() + "\"");
+                    lineModified = matcher.replaceAll(match->"\"" + match.group() + "\"");
                     
                     matcher = colonInBraket.matcher(lineModified);
                     lineModified = matcher.replaceAll(match -> match.group(0)+ ":");
@@ -80,26 +79,21 @@ public class ParseConfig {
                     }
                     
                     
-                    System.out.println(lineModified);
                     jsonRepresentation += lineModified + ",";
                 }
                 
                 jsonRepresentation += "}";
-                System.out.println(jsonRepresentation);
                 
                 // ok at the end just remove the {,
                 // ,}
                 // , at the end
-                Pattern removeComas = Pattern.compile("(?<=\\{),|,(?=\\})|,$");
+                Pattern removeComas = Pattern.compile("(?<=\\{),|,(?=\\})|,+$");
                 jsonRepresentation = jsonRepresentation.replaceAll(removeComas.toString(), "");
                 System.out.println(jsonRepresentation);
-                
                 // remove ,, comas
-                jsonRepresentation = jsonRepresentation.replaceAll(",,", ",");
+                jsonRepresentation = jsonRepresentation.replaceAll(",,+", ",");
                 System.out.println(jsonRepresentation);
                 
-                
-
 
                 
             } catch (IOException ex) {
